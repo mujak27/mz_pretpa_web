@@ -1,0 +1,11 @@
+type _type{
+  Id : ID!
+}
+
+type Query {
+  dummyQuery: _type
+}
+
+extend type Mutation {
+  dummyMutation(id: ID!): _type
+}
