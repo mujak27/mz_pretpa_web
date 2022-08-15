@@ -2,37 +2,29 @@
 #
 # https://gqlgen.com/getting-started/
 
-directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
-    | FIELD_DEFINITION
 
+directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
-type Comment {
-  id: ID!
-  text: String!
-  # user: User! 
-}
+# new directive
+directive @auth on FIELD_DEFINITION
 
 type Todo {
   id: ID!
   text: String!
   done: Boolean!
-  # user: User!
-  # Comment: [Comment!]!
-}
-
-type User {
-  id: ID! 
-  name: String!
+  userId : String!
+  user: User! @goField(forceResolver: true)
+  # Comment: [Comment!]! @goField(forceResolver: true)
 }
 
 extend type Query {
   todo(id: ID!): Todo!
-  todos: [Todo!]!
+  todos: [Todo!]! @auth
 }
 
-input newUser {
-  id: ID! 
-  name: String!
+extend type Mutation {
+  createTodo(input: NewTodo!): Todo!
+  updateTodo(input: inputTodo!): Todo!
 }
 
 input NewTodo {
@@ -44,10 +36,4 @@ input inputTodo{
   id: ID!
   text: String!
   done: Boolean!
-}
-
-extend type Mutation {
-  createTodo(input: NewTodo!): Todo!
-  updateTodo(input: inputTodo!): Todo!
-  createUser(input: newUser!): User!
 }

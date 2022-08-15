@@ -1,11 +1,29 @@
-type _type{
-  Id : ID!
+scalar Any
+
+type User {
+  ID: ID! 
+  UserName: String!
+  UserEmail : String!
+  UserPassword : String!
+}
+
+
+
+input inputLogin {
+  email: String!
+  passowrd: String!
+}
+
+input inputRegister {
+  UserName: String!
+  UserEmail : String!
+  UserPassword : String!
 }
 
 type Query {
-  dummyQuery: _type
+  login(input : inputLogin!) : Any!
+  register(input : inputRegister) : Any!
 }
 
-extend type Mutation {
-  dummyMutation(id: ID!): _type
-}
+# extend type Mutation {
+# }

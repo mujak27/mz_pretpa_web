@@ -2,15 +2,19 @@ package main
 
 import (
 	// "gorm.io/driver/mysql"
+
 	"log"
 	"net/http"
 	"os"
+
+	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
+	auth "github.com/mujak27/GO/auth"
 	"github.com/mujak27/GO/graph"
 	"github.com/mujak27/GO/graph/generated"
 	"github.com/mujak27/GO/graph/model"
@@ -28,6 +32,7 @@ func main() {
 	}
 
 	router := chi.NewRouter()
+	router.Use(auth.AuthMiddleware)
 
 	// Add CORS middleware around every request
 	// See https://github.com/rs/cors for full option listing
@@ -48,13 +53,17 @@ func main() {
 		panic(err)
 	}
 
-	db.AutoMigrate(&model.Todo{}, &model.User{})
+	db.AutoMigrate(
+		&model.Todo{},
+		&model.User{},
+	)
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{
-		Resolvers: &graph.Resolver{
-			DB: db,
-		},
-	}))
+	c := generated.Config{Resolvers: &graph.Resolver{
+		DB: db,
+	}}
+	c.Directives.Auth = auth.Auth
+
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(c))
 	srv.AddTransport(&transport.Websocket{
 		Upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
@@ -66,10 +75,14 @@ func main() {
 		},
 	})
 
-	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	router.Handle("/login", http.FileServer(http.Dir("./pages/login")))
+	router.Handle("/",
+		// middleware(
+		playground.Handler("GraphQL playground", "/query"))
+	// )
 	router.Handle("/query", srv)
 
-	log.Fatal(http.ListenAndServe(":"+port, router))
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	log.Fatal(http.ListenAndServe(":"+port, router))
 
 }
